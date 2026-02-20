@@ -1,0 +1,27 @@
+{
+  "name": "movie-show",
+  "version": "1.0.0",
+  "description": "This is a free platform to watch movies and live stream for free",
+  "keywords": [
+    "express",
+    "react"
+  ],
+  "homepage": "https://github.com/Bolice1/Movie-Show#readme",
+  "bugs": {
+    "url": "https://github.com/Bolice1/Movie-Show/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bolice1/Movie-Show.git"
+  },
+  "license": "Apache-2.0",
+  "author": "Komezusenge Bolice",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
