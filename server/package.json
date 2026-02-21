@@ -1,7 +1,11 @@
 {
+
+  "name": "backend_express",
+  "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "migrate":"node migrations/migrate.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
