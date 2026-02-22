@@ -1,4 +1,5 @@
 const mysql = require("mysql2/promise");
+require('dotenv').config();
 
 // let us connect to mysql database 
 
@@ -31,3 +32,5 @@ async function connectTodb() {
 }
 
 connectTodb().catch(error => console.log(`Error: ${error}`));
+
+module.exports = {connectTodb};
