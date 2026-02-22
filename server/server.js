@@ -1,5 +1,7 @@
 const express      = require('express');
 const cookieParser = require('cookie-parser');
+const contentRoutes = require('./routes/contentRoutes');
+
 require('dotenv').config();
 require('./config/db');
 
@@ -11,6 +13,8 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/content', contentRoutes);
+
 
 app.use((req, res) => {
     res.status(404).json({ message: `Route ${req.method} ${req.path} not found.` });
