@@ -1,36 +1,24 @@
-const mysql = require("mysql2/promise");
+const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// let us connect to mysql database 
+const pool = mysql.createPool({
+    host:     process.env.DB_HOST,
+    user:     process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
 
-async function connectTodb() {
-    let connect = null; 
+pool.getConnection()
+    .then(conn => {
+        console.log('Connected to MariaDB');
+        conn.release();
+    })
+    .catch(err => {
+        console.error('DB connection failed:', err.message);
+        process.exit(1);
+    });
 
-    try {
-        connect = await mysql.createConnection({
-            host: process.env.DB_HOST,
-            user: process.env.DB_USER,
-            password: process.env.DB_PASSWORD,
-            database: process.env.DB_NAME
-        });
-
-        const [rows, fields] = await connect.execute("SELECT * FROM users"); 
-
-        console.log(rows);
-        return rows;
-
-    } catch(error) {
-        console.error(`Error occurred: \n${error}`);
-        throw error; 
-
-    } finally {
-        if (connect) { 
-            await connect.end(); 
-            console.log("Database connection ended.");
-        }
-    }
-}
-
-connectTodb().catch(error => console.log(`Error: ${error}`));
-
-module.exports = {connectTodb};
+module.exports = pool;
