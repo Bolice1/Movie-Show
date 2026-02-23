@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt    = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const pool   = require('../config/db');
+const { sendWelcomeEmail } = require('../utils/emails');
 
 const generateAccessToken = (userId, userName) =>
     jwt.sign({ userId, userName }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRES });
@@ -9,9 +10,9 @@ const generateAccessToken = (userId, userName) =>
 const generateRefreshToken = (userId) =>
     jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRES });
 
-// POST /api/auth/register
 const register = async (req, res) => {
     const { userName, firstName, lastName, email, password } = req.body;
+
     if (!userName || !firstName || !lastName || !email || !password)
         return res.status(400).json({ message: 'All fields are required.' });
 
@@ -30,6 +31,8 @@ const register = async (req, res) => {
             [userId, userName, firstName, lastName, email, hashedPassword]
         );
 
+        await sendWelcomeEmail(email, userName);
+
         return res.status(201).json({ message: 'Account created successfully.' });
     } catch (err) {
         console.error('Register error:', err.message);
@@ -37,9 +40,9 @@ const register = async (req, res) => {
     }
 };
 
-// POST /api/auth/login
 const login = async (req, res) => {
     const { email, password } = req.body;
+
     if (!email || !password)
         return res.status(400).json({ message: 'Email and password are required.' });
 
@@ -84,9 +87,9 @@ const login = async (req, res) => {
     }
 };
 
-// POST /api/auth/refresh
 const refresh = async (req, res) => {
     const token = req.cookies?.refreshToken;
+
     if (!token)
         return res.status(401).json({ message: 'No refresh token provided.' });
 
@@ -112,9 +115,9 @@ const refresh = async (req, res) => {
     }
 };
 
-// POST /api/auth/logout
 const logout = async (req, res) => {
     const token = req.cookies?.refreshToken;
+
     if (!token) return res.status(204).send();
 
     try {
