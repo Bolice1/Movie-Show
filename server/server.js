@@ -1,6 +1,8 @@
-const express      = require('express');
+const express = require('express');
 const cookieParser = require('cookie-parser');
 const contentRoutes = require('./routes/contentRoutes');
+const watchlistRoutes = require('./routes/watchlistRoutes');
+const likesRoutes = require('./routes/likesRoutes');
 
 require('dotenv').config();
 require('./config/db');
@@ -19,11 +21,16 @@ app.use('/api/content', contentRoutes);
 app.use((req, res) => {
     res.status(404).json({ message: `Route ${req.method} ${req.path} not found.` });
 });
+
+app.use('/api/watchlist', watchlistRoutes);
+app.use('/api/likes', likesRoutes);
+
 // grobal error handler
 app.use((err, req, res, next) => {
     console.error('Unhandled error:', err.message);
     res.status(500).json({ message: 'Internal server error.' });
 });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
