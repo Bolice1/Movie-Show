@@ -1,18 +1,17 @@
 const express = require('express');
-const router = express.Router();
+const router  = express.Router();
 const {
     getAllContent, getContentById,
     createContent, updateContent, deleteContent
 } = require('../controllers/contentController');
-const { authenticate } = require('../middleware/authMiddleware');
+const { authenticate, isAdmin } = require('../middleware/authMiddleware');
 
-// Public routes
-router.get('/', getAllContent);
+router.get('/',    getAllContent);
 router.get('/:id', getContentById);
 
-// Protected routes — must be logged in
-router.post('/', authenticate, createContent);
-router.put('/:id', authenticate, updateContent);
-router.delete('/:id', authenticate, deleteContent);
+// Only admins can create, update, delete
+router.post('/',      authenticate, isAdmin, createContent);
+router.put('/:id',    authenticate, isAdmin, updateContent);
+router.delete('/:id', authenticate, isAdmin, deleteContent);
 
 module.exports = router;

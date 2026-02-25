@@ -4,8 +4,8 @@ const { v4: uuidv4 } = require('uuid');
 const pool   = require('../config/db');
 const { sendWelcomeEmail } = require('../utils/emails');
 
-const generateAccessToken = (userId, userName) =>
-    jwt.sign({ userId, userName }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRES });
+const generateAccessToken = (userId, userName, role) =>
+    jwt.sign({ userId, userName, role }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRES });
 
 const generateRefreshToken = (userId) =>
     jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRES });
@@ -48,7 +48,7 @@ const login = async (req, res) => {
 
     try {
         const [rows] = await pool.query(
-            'SELECT UserId, UserName, password FROM users WHERE email = ?', [email]
+            'SELECT UserId, UserName, password, role FROM users WHERE email = ?', [email]
         );
         if (rows.length === 0)
             return res.status(401).json({ message: 'Invalid email or password.' });
@@ -58,7 +58,7 @@ const login = async (req, res) => {
         if (!isMatch)
             return res.status(401).json({ message: 'Invalid email or password.' });
 
-        const accessToken  = generateAccessToken(user.UserId, user.UserName);
+        const accessToken  = generateAccessToken(user.UserId, user.UserName, user.role);
         const refreshToken = generateRefreshToken(user.UserId);
 
         const expiresAt = new Date();
@@ -79,7 +79,7 @@ const login = async (req, res) => {
         return res.status(200).json({
             message: 'Login successful.',
             accessToken,
-            user: { id: user.UserId, userName: user.UserName }
+            user: { id: user.UserId, userName: user.UserName, role: user.role }
         });
     } catch (err) {
         console.error('Login error:', err.message);
@@ -102,12 +102,12 @@ const refresh = async (req, res) => {
 
         const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
         const [userRows] = await pool.query(
-            'SELECT UserId, UserName FROM users WHERE UserId = ?', [decoded.userId]
+            'SELECT UserId, UserName, role FROM users WHERE UserId = ?', [decoded.userId]
         );
         if (userRows.length === 0)
             return res.status(403).json({ message: 'User not found.' });
 
-        const newAccessToken = generateAccessToken(userRows[0].UserId, userRows[0].UserName);
+        const newAccessToken = generateAccessToken(userRows[0].UserId, userRows[0].UserName, userRows[0].role);
         return res.status(200).json({ accessToken: newAccessToken });
     } catch (err) {
         console.error('Refresh error:', err.message);
