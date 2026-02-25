@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
-const jwt    = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-const pool   = require('../config/db');
+const pool = require('../config/db');
 const { sendWelcomeEmail } = require('../utils/emails');
 
 const generateAccessToken = (userId, userName, role) =>
@@ -58,7 +58,7 @@ const login = async (req, res) => {
         if (!isMatch)
             return res.status(401).json({ message: 'Invalid email or password.' });
 
-        const accessToken  = generateAccessToken(user.UserId, user.UserName, user.role);
+        const accessToken = generateAccessToken(user.UserId, user.UserName, user.role);
         const refreshToken = generateRefreshToken(user.UserId);
 
         const expiresAt = new Date();
@@ -130,4 +130,37 @@ const logout = async (req, res) => {
     }
 };
 
-module.exports = { register, login, refresh, logout };
+const resetPassword = async (req, res) => {
+    const { userName, oldPassword, newPassword } = req.body;
+
+    if (!userName || !oldPassword || !newPassword)
+        return res.status(400).json({ message: 'All fields are required.' });
+
+    try {
+        // Find user by username
+        const [rows] = await pool.query(
+            'SELECT UserId, password FROM users WHERE UserName = ?', [userName]
+        );
+        if (rows.length === 0)
+            return res.status(404).json({ message: 'User not found.' });
+
+        // Verify old password
+        const isMatch = await bcrypt.compare(oldPassword, rows[0].password);
+        if (!isMatch)
+            return res.status(401).json({ message: 'Old password is incorrect.' });
+
+        // Hash new password and update
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await pool.query(
+            'UPDATE users SET password = ? WHERE UserName = ?',
+            [hashedPassword, userName]
+        );
+
+        return res.status(200).json({ message: 'Password reset successfully.' });
+    } catch (err) {
+        console.error('resetPassword error:', err.message);
+        return res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+
+module.exports = { register, login, refresh, logout, resetPassword };

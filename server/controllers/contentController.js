@@ -70,8 +70,7 @@ const getContentById = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error.' });
     }
 };
-
-// POST /api/content — add new content (protected)
+// create content using post 
 const createContent = async (req, res) => {
     const { title, description, duration, type, genreIds, actorIds } = req.body;
 
@@ -82,20 +81,24 @@ const createContent = async (req, res) => {
         return res.status(400).json({ message: 'Type must be Movie or Serie.' });
 
     try {
-        // Insert content
+        // Check if content with same title already exists
+        const [exists] = await pool.query(
+            'SELECT ContentID FROM content WHERE Title = ?', [title]
+        );
+        if (exists.length > 0)
+            return res.status(409).json({ message: "Content with this title already exists. " });
+
         const [result] = await pool.query(
             'INSERT INTO content (Title, Description, Duration, Type) VALUES (?, ?, ?, ?)',
             [title, description, duration, type]
         );
         const contentId = result.insertId;
 
-        // Link genres if provided
         if (genreIds && genreIds.length > 0) {
             const genreValues = genreIds.map(gId => [contentId, gId]);
             await pool.query('INSERT INTO Content_Genre (ContentID, GenreID) VALUES ?', [genreValues]);
         }
 
-        // Link actors if provided
         if (actorIds && actorIds.length > 0) {
             const actorValues = actorIds.map(({ id, role }) => [contentId, id, role || null]);
             await pool.query('INSERT INTO Content_Actors (ContentID, ActorID, Role) VALUES ?', [actorValues]);
