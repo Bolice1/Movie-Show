@@ -4,10 +4,10 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
     const { login } = useAuth();
-    const navigate  = useNavigate();
+    const navigate = useNavigate();
 
-    const [form, setForm]     = useState({ email: '', password: '' });
-    const [error, setError]   = useState('');
+    const [form, setForm] = useState({ email: '', password: '' });
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleChange = (e) =>
@@ -72,6 +72,11 @@ export default function Login() {
                     >
                         {loading ? 'Signing in...' : 'Sign In'}
                     </button>
+                    <p style={{ textAlign: 'center', marginTop: '4px' }}>
+                        <Link to="/forgot-password" style={{ color: '#b3b3b3', fontSize: '0.9rem' }}>
+                            Forgot your password?
+                        </Link>
+                    </p>
                 </form>
 
                 <p style={{ marginTop: '20px', color: '#b3b3b3', textAlign: 'center' }}>

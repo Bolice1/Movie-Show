@@ -1,8 +1,9 @@
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const jwt    = require('jsonwebtoken');
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
-const pool = require('../config/db');
-const { sendWelcomeEmail } = require('../utils/emails');
+const pool   = require('../config/db');
+const { sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/emails');
 
 const generateAccessToken = (userId, userName, role) =>
     jwt.sign({ userId, userName, role }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRES });
@@ -58,7 +59,7 @@ const login = async (req, res) => {
         if (!isMatch)
             return res.status(401).json({ message: 'Invalid email or password.' });
 
-        const accessToken = generateAccessToken(user.UserId, user.UserName, user.role);
+        const accessToken  = generateAccessToken(user.UserId, user.UserName, user.role);
         const refreshToken = generateRefreshToken(user.UserId);
 
         const expiresAt = new Date();
@@ -130,37 +131,84 @@ const logout = async (req, res) => {
     }
 };
 
-const resetPassword = async (req, res) => {
-    const { userName, oldPassword, newPassword } = req.body;
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
 
-    if (!userName || !oldPassword || !newPassword)
-        return res.status(400).json({ message: 'All fields are required.' });
+    if (!email)
+        return res.status(400).json({ message: 'Email is required.' });
 
     try {
-        // Find user by username
         const [rows] = await pool.query(
-            'SELECT UserId, password FROM users WHERE UserName = ?', [userName]
+            'SELECT UserId, UserName FROM users WHERE email = ?', [email]
         );
+
         if (rows.length === 0)
-            return res.status(404).json({ message: 'User not found.' });
+            return res.status(200).json({ message: 'If that email exists, a reset link has been sent.' });
 
-        // Verify old password
-        const isMatch = await bcrypt.compare(oldPassword, rows[0].password);
-        if (!isMatch)
-            return res.status(401).json({ message: 'Old password is incorrect.' });
+        const user = rows[0];
+        const resetToken = crypto.randomBytes(32).toString('hex');
 
-        // Hash new password and update
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 1);
+
+        await pool.query('DELETE FROM PasswordResets WHERE UserID = ?', [user.UserId]);
+
         await pool.query(
-            'UPDATE users SET password = ? WHERE UserName = ?',
-            [hashedPassword, userName]
+            'INSERT INTO PasswordResets (UserID, Token, ExpiresAt) VALUES (?, ?, ?)',
+            [user.UserId, resetToken, expiresAt]
         );
 
-        return res.status(200).json({ message: 'Password reset successfully.' });
+        await sendPasswordResetEmail(email, user.UserName, resetToken);
+
+        return res.status(200).json({ message: 'If that email exists, a reset link has been sent.' });
+    } catch (err) {
+        console.error('forgotPassword error:', err.message);
+        return res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+
+const resetPassword = async (req, res) => {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword)
+        return res.status(400).json({ message: 'New password is required.' });
+
+    if (newPassword.length < 6)
+        return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+
+    try {
+        const [rows] = await pool.query(
+            'SELECT UserID FROM PasswordResets WHERE Token = ? AND ExpiresAt > NOW() AND Used = FALSE',
+            [token]
+        );
+
+        if (rows.length === 0)
+            return res.status(400).json({ message: 'Reset link is invalid or has expired.' });
+
+        const userId = rows[0].UserID;
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await pool.query(
+            'UPDATE users SET password = ? WHERE UserId = ?',
+            [hashedPassword, userId]
+        );
+
+        await pool.query(
+            'UPDATE PasswordResets SET Used = TRUE WHERE Token = ?',
+            [token]
+        );
+
+        await pool.query(
+            'DELETE FROM RefreshTokens WHERE UserID = ?',
+            [userId]
+        );
+
+        return res.status(200).json({ message: 'Password reset successfully. Please login.' });
     } catch (err) {
         console.error('resetPassword error:', err.message);
         return res.status(500).json({ message: 'Internal server error.' });
     }
 };
 
-module.exports = { register, login, refresh, logout, resetPassword };
+module.exports = { register, login, refresh, logout, forgotPassword, resetPassword };

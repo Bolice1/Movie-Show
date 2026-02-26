@@ -1,15 +1,15 @@
-const express = require('express');
-const router = express.Router();
-const { register, login, refresh, logout,resetPassword } = require('../controllers/authController');
+const express    = require('express');
+const router     = express.Router();
+const { register, login, refresh, logout, forgotPassword, resetPassword } = require('../controllers/authController');
 const { authenticate } = require('../middleware/authMiddleware');
 
-router.post('/register', register);
-router.post('/login', login);
-router.post('/refresh', refresh);
-router.post('/logout', logout);
-router.put('/resetPassword',resetPassword);
+router.post('/register',              register);
+router.post('/login',                 login);
+router.post('/refresh',               refresh);
+router.post('/logout',                logout);
+router.post('/forgot-password',       forgotPassword);
+router.post('/reset-password/:token', resetPassword);
 
-// Protected route — requires valid access token
 router.get('/me', authenticate, async (req, res) => {
     const pool = require('../config/db');
     const [rows] = await pool.query(

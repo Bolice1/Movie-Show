@@ -6,8 +6,9 @@ import Register from './pages/Register';
 import ContentDetails from './pages/ContentDetails';
 import Watchlist from './pages/Watchlist';
 import Navbar from './components/Navbar';
-
 import Admin from './pages/Admin';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 
 
@@ -35,6 +36,8 @@ const AppRoutes = () => {
         <Route path="/watchlist" element={
           <ProtectedRoute><Watchlist /></ProtectedRoute>
         } />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
       </Routes>
     </>
   );

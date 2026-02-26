@@ -151,6 +151,18 @@ async function migrate() {
                 FOREIGN KEY (SeasonID) REFERENCES Seasons(SeasonID) ON DELETE CASCADE
             ) ENGINE=InnoDB
         `);
+        await connection.query(`
+    CREATE TABLE IF NOT EXISTS PasswordResets (
+        ResetID   INT PRIMARY KEY AUTO_INCREMENT,
+        UserID    VARCHAR(36) NOT NULL,
+        Token     VARCHAR(255) NOT NULL UNIQUE,
+        ExpiresAt DATETIME NOT NULL,
+        Used      BOOLEAN DEFAULT FALSE,
+        CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (UserID) REFERENCES users(UserId) ON DELETE CASCADE
+    ) ENGINE=InnoDB
+`);
+
 
         console.log('All tables created successfully.');
     } catch (err) {
