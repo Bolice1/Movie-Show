@@ -1,22 +1,70 @@
 const pool = require('../config/db');
 
-// GET /api/content — get all movies & series
 const getAllContent = async (req, res) => {
     try {
+        const page     = parseInt(req.query.page)   || 1;
+        const limit    = parseInt(req.query.limit)  || 8;
+        const search   = req.query.search           || '';
+        const type     = req.query.type             || '';
+        const genre    = req.query.genre            || '';
+        const offset   = (page - 1) * limit;
+
+        let whereClause  = 'WHERE 1=1';
+        const params     = [];
+
+        if (search) {
+            whereClause += ' AND (c.Title LIKE ? OR c.Description LIKE ?)';
+            params.push(`%${search}%`, `%${search}%`);
+        }
+        if (type) {
+            whereClause += ' AND c.Type = ?';
+            params.push(type);
+        }
+        if (genre) {
+            whereClause += ' AND g.GenreName = ?';
+            params.push(genre);
+        }
+
+        // Get total count for pagination
+        const [countRows] = await pool.query(`
+            SELECT COUNT(DISTINCT c.ContentID) AS total
+            FROM content c
+            LEFT JOIN Content_Genre cg ON c.ContentID = cg.ContentID
+            LEFT JOIN Genre g          ON cg.GenreID  = g.GenreID
+            ${whereClause}
+        `, params);
+
+        const total      = countRows[0].total;
+        const totalPages = Math.ceil(total / limit);
+
+        // Get paginated content
         const [rows] = await pool.query(`
-            SELECT 
-                c.ContentID, c.Title, c.Description, 
+            SELECT
+                c.ContentID, c.Title, c.Description,
                 c.ReleaseDate, c.Duration, c.Type,
                 GROUP_CONCAT(DISTINCT g.GenreName) AS genres,
                 GROUP_CONCAT(DISTINCT a.Name)      AS actors
             FROM content c
-            LEFT JOIN Content_Genre cg ON c.ContentID = cg.ContentID
-            LEFT JOIN Genre g          ON cg.GenreID  = g.GenreID
+            LEFT JOIN Content_Genre cg  ON c.ContentID = cg.ContentID
+            LEFT JOIN Genre g           ON cg.GenreID  = g.GenreID
             LEFT JOIN Content_Actors ca ON c.ContentID = ca.ContentID
             LEFT JOIN Actors a          ON ca.ActorID  = a.ActorID
+            ${whereClause}
             GROUP BY c.ContentID
-        `);
-        return res.status(200).json({ content: rows });
+            LIMIT ? OFFSET ?
+        `, [...params, limit, offset]);
+
+        return res.status(200).json({
+            content: rows,
+            pagination: {
+                total,
+                totalPages,
+                currentPage: page,
+                limit,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
+        });
     } catch (err) {
         console.error('getAllContent error:', err.message);
         return res.status(500).json({ message: 'Internal server error.' });
