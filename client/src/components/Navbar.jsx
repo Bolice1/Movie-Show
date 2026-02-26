@@ -32,7 +32,9 @@ export default function Navbar() {
                             </Link>
                         )}
                         <Link to="/watchlist" style={{ color: '#b3b3b3' }}>Watchlist</Link>
-                        <span style={{ color: '#b3b3b3' }}>Hi, {user.userName}</span>
+                        <Link to="/profile" style={{ color: '#b3b3b3' }}>
+                            👤 {user.userName}
+                        </Link>
                         <button
                             onClick={logout}
                             className="btn btn-secondary"

@@ -210,5 +210,49 @@ const resetPassword = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error.' });
     }
 };
+const updateProfile = async (req, res) => {
+    const { firstName, lastName, userName, email } = req.body;
 
-module.exports = { register, login, refresh, logout, forgotPassword, resetPassword };
+    try {
+        // Check if username or email is taken by another user
+        if (userName || email) {
+            const [existing] = await pool.query(
+                'SELECT UserId FROM users WHERE (email = ? OR UserName = ?) AND UserId != ?',
+                [email || '', userName || '', req.user.userId]
+            );
+            if (existing.length > 0)
+                return res.status(409).json({ message: 'Email or username already taken.' });
+        }
+
+        await pool.query(`
+            UPDATE users
+            SET firstName = COALESCE(?, firstName),
+                lastName  = COALESCE(?, lastName),
+                UserName  = COALESCE(?, UserName),
+                email     = COALESCE(?, email)
+            WHERE UserId = ?
+        `, [firstName, lastName, userName, email, req.user.userId]);
+
+        const [rows] = await pool.query(
+            'SELECT UserId, UserName, firstName, lastName, email, AccountCreationDate FROM users WHERE UserId = ?',
+            [req.user.userId]
+        );
+
+        return res.status(200).json({ message: 'Profile updated successfully.', user: rows[0] });
+    } catch (err) {
+        console.error('updateProfile error:', err.message);
+        return res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+const deleteAccount = async (req, res) => {
+    try {
+        await pool.query('DELETE FROM users WHERE UserId = ?', [req.user.userId]);
+        res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'Strict' });
+        return res.status(200).json({ message: 'Account deleted successfully.' });
+    } catch (err) {
+        console.error('deleteAccount error:', err.message);
+        return res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+
+module.exports = { register, login, refresh, logout, forgotPassword, resetPassword, updateProfile,deleteAccount };

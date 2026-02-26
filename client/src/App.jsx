@@ -9,6 +9,8 @@ import Navbar from './components/Navbar';
 import Admin from './pages/Admin';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Profile from './pages/Profile';
+
 
 
 
@@ -38,6 +40,9 @@ const AppRoutes = () => {
         } />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/profile" element={
+          <ProtectedRoute><Profile /></ProtectedRoute>
+        } />
       </Routes>
     </>
   );
