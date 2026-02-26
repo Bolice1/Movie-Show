@@ -16,6 +16,13 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
+const cors = require('cors');
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}));
+
+
 app.use('/api/auth',      authRoutes);
 app.use('/api/content',   contentRoutes);
 app.use('/api/watchlist', watchlistRoutes);
