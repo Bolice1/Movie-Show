@@ -4,7 +4,7 @@ const sendWelcomeEmail = async (email, userName) => {
     const mailOptions = {
         from: `"Movie Show" <${process.env.EMAIL_USER}>`,
         to: email,
-        subject: 'Welcome to Movie Show! 🎬',
+        subject: 'Welco🎬me to Movie Show! ',
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
                 <div style="background-color: #e50914; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
