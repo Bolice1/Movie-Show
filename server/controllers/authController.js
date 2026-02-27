@@ -1,8 +1,8 @@
 const bcrypt = require('bcrypt');
-const jwt    = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
-const pool   = require('../config/db');
+const pool = require('../config/db');
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/emails');
 
 const generateAccessToken = (userId, userName, role) =>
@@ -59,7 +59,7 @@ const login = async (req, res) => {
         if (!isMatch)
             return res.status(401).json({ message: 'Invalid email or password.' });
 
-        const accessToken  = generateAccessToken(user.UserId, user.UserName, user.role);
+        const accessToken = generateAccessToken(user.UserId, user.UserName, user.role);
         const refreshToken = generateRefreshToken(user.UserId);
 
         const expiresAt = new Date();
@@ -223,7 +223,9 @@ const updateProfile = async (req, res) => {
             if (existing.length > 0)
                 return res.status(409).json({ message: 'Email or username already taken.' });
         }
-
+        // check if the passed in values are not empty for the case of updating the profile 
+        if (firstName.length < 0 || lastName.length < 0 || userName.length < 0 || email.length < 0)
+            return res.status(400).json({ message: "Some fields are empty 🪹" });
         await pool.query(`
             UPDATE users
             SET firstName = COALESCE(?, firstName),
@@ -255,4 +257,4 @@ const deleteAccount = async (req, res) => {
     }
 };
 
-module.exports = { register, login, refresh, logout, forgotPassword, resetPassword, updateProfile,deleteAccount };
+module.exports = { register, login, refresh, logout, forgotPassword, resetPassword, updateProfile, deleteAccount };
