@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "express": "^5.2.1",
+    "joi": "^18.0.2",
     "mysql2": "^3.17.4"
   }
 }
