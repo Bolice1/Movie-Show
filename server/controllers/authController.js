@@ -213,8 +213,9 @@ const resetPassword = async (req, res) => {
 const updateProfile = async (req, res) => {
     const { firstName, lastName, userName, email } = req.body;
 
+    if (!firstName || !lastName || !userName || !email) return res.status(400).json({ message: "all fields are required ❤️‍🔥❤️‍🔥❤️‍🔥" });
+
     try {
-        // Check if username or email is taken by another user
         if (userName || email) {
             const [existing] = await pool.query(
                 'SELECT UserId FROM users WHERE (email = ? OR UserName = ?) AND UserId != ?',
@@ -223,9 +224,6 @@ const updateProfile = async (req, res) => {
             if (existing.length > 0)
                 return res.status(409).json({ message: 'Email or username already taken.' });
         }
-        // check if the passed in values are not empty for the case of updating the profile 
-        if (firstName.length < 0 || lastName.length < 0 || userName.length < 0 || email.length < 0)
-            return res.status(400).json({ message: "Some fields are empty 🪹" });
         await pool.query(`
             UPDATE users
             SET firstName = COALESCE(?, firstName),

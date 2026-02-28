@@ -51,6 +51,8 @@ export default function Profile() {
         setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value });
 
     const handleUpdateProfile = async (e) => {
+
+        if(!form.firstName.trim()||!form.lastName.trim()||!form.userName.trim()||!form.email.trim()) return setError("All fields required ☠️ !").preventDefault();
         e.preventDefault();
         setError('');
         setMessage('');
