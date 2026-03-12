@@ -2,7 +2,7 @@ const express = require('express');
 const router  = express.Router();
 const { getAllActors, getActorById, createActor, updateActor, deleteActor } = require('../controllers/actorsController');
 const { authenticate, isAdmin } = require('../middleware/authMiddleware');
-
+// all the routes pointing to actors will be configured here
 router.get('/',    getAllActors);
 router.get('/:id', getActorById);
 
